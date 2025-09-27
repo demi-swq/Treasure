@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寻宝大冒险 </title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #461a6c, #b21fa8, #fd2df3);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .treasure-map {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            opacity: 0.5;
+            transform: translateY(20px);
+            border-left: 5px solid #fdbb2d;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .step::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .step.active::before {
+            left: 100%;
+        }
+        
+        .step.active {
+            opacity: 1;
+            transform: translateY(0);
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 5px solid #ffcc00;
+        }
+        
+        .step.completed {
+            background: rgba(0, 255, 0, 0.1);
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .step.failed {
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 5px solid #f44336;
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        
+        .step.active .step-icon {
+            transform: scale(1.2);
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .step-content {
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .status.pending {
+            background: #ff9800;
+        }
+        
+        .status.success {
+            background: #4CAF50;
+        }
+        
+        .status.failed {
+            background: #f44336;
+        }
+        
+        .input-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .puzzle-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .puzzle-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .puzzle-options {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .puzzle-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .puzzle-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffcc00;
+        }
+        
+        .puzzle-option.selected {
+            background: rgba(255, 204, 0, 0.3);
+            border-color: #ffcc00;
+        }
+        
+        input {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            width: 200px;
+            font-size: 1rem;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #fdbb2d;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #ffcc00;
+            transform: translateY(-2px);
+        }
+        
+        .treasure-box {
+            text-align: center;
+            margin-top: 30px;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+        }
+        
+        .treasure-box.open {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .treasure-img {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            background: #ffcc00;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: glow 2s infinite;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #ffcc00; }
+            50% { box-shadow: 0 0 20px #ffcc00; }
+            100% { box-shadow: 0 0 5px #ffcc00; }
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: #fdbb2d;
+            width: 0%;
+            transition: width 1s ease;
+            position: relative;
+        }
+        
+        .progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 20px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            animation: progressShine 2s infinite;
+        }
+        
+        @keyframes progressShine {
+            0% { left: -20px; }
+            100% { left: 100%; }
+        }
+        
+        .restart-btn {
+            display: block;
+            margin: 20px auto;
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .restart-btn:hover {
+            background: #45a049;
+        }
+        
+        @media (max-width: 768px) {
+            .step-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .step-icon {
+                margin-top: 10px;
+            }
+            
+            input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .puzzle-options {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>寻宝大冒险 </h1>
+            <p class="subtitle">跟随线索，寻找传说中的宝藏！每一步都充满挑战！</p>
+        </header>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        
+        <div class="treasure-map">
+            <div class="step" id="step1">
+                <div class="step-header">
+                    <div class="step-title">第一步：获取初始线索</div>
+                    <div class="step-icon">🔍</div>
+                </div>
+                <div class="step-content">
+                    <span class="status pending">等待中...</span>
+                </div>
+            </div>
+            
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <div class="step-title">第二步：解码古老文字</div>
+                    <div class="step-icon">📜</div>
+                </div>
+                <div class="step-content">
+                    <span class="status pending">等待中...</span>
+                    <div class="puzzle-area" id="puzzle1" style="display: none;">
+                        <div class="puzzle-title">选择正确的符号组合来解码古老文字：</div>
+                        <div class="puzzle-options">
+                            <div class="puzzle-option" data-value="wrong1">☀️🌙⭐</div>
+                            <div class="puzzle-option" data-value="correct">🗝️🗿🏛️</div>
+                            <div class="puzzle-option" data-value="wrong2">⚓⚔️🛡️</div>
+                            <div class="puzzle-option" data-value="wrong3">🌊🔥🌪️</div>
+                        </div>
+                        <button id="decodeBtn" style="margin-top: 10px;">解码</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <div class="step-title">第三步：搜索神庙</div>
+                    <div class="step-icon">🏛️</div>
+                </div>
+                <div class="step-content">
+                    <span class="status pending">等待中...</span>
+                </div>
+            </div>
+            
+            <div class="step" id="step4">
+                <div class="step-header">
+                    <div class="step-title">第四步：验证钥匙</div>
+                    <div class="step-icon">🔑</div>
+                </div>
+                <div class="step-content">
+                    <span class="status pending">等待中...</span>
+                    <div class="puzzle-area" id="puzzle2" style="display: none;">
+                        <div class="puzzle-title">选择正确的钥匙打开宝箱：</div>
+                        <div class="puzzle-options">
+                            <div class="puzzle-option" data-value="wrong1">生锈的铁钥匙</div>
+                            <div class="puzzle-option" data-value="wrong2">华丽的银钥匙</div>
+                            <div class="puzzle-option" data-value="correct">古老的金钥匙</div>
+                            <div class="puzzle-option" data-value="wrong3">神秘的符文钥匙</div>
+                        </div>
+                        <button id="verifyBtn" style="margin-top: 10px;">验证</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step" id="step5">
+                <div class="step-header">
+                    <div class="step-title">第五步：打开宝箱</div>
+                    <div class="step-icon">💎</div>
+                </div>
+                <div class="step-content">
+                    <span class="status pending">等待中...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area" id="inputArea">
+            <p>遇到神庙守卫！请输入您的逃跑速度：</p>
+            <input type="number" id="speedInput" placeholder="请输入速度值" min="0">
+            <button id="speedBtn">开始跑酷！</button>
+        </div>
+        
+        <div class="treasure-box" id="treasureBox">
+            <div class="treasure-img">💎</div>
+            <h2 id="treasureMessage">宝藏即将显现...</h2>
+            <button class="restart-btn" id="restartBtn" style="display: none;">重新开始冒险</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            class TreasureMapUI {
+                constructor() {
+                    this.steps = document.querySelectorAll('.step');
+                    this.progressBar = document.getElementById('progress');
+                    this.inputArea = document.getElementById('inputArea');
+                    this.speedInput = document.getElementById('speedInput');
+                    this.speedBtn = document.getElementById('speedBtn');
+                    this.treasureBox = document.getElementById('treasureBox');
+                    this.treasureMessage = document.getElementById('treasureMessage');
+                    this.restartBtn = document.getElementById('restartBtn');
+                    this.puzzle1 = document.getElementById('puzzle1');
+                    this.puzzle2 = document.getElementById('puzzle2');
+                    this.decodeBtn = document.getElementById('decodeBtn');
+                    this.verifyBtn = document.getElementById('verifyBtn');
+                    
+                    this.currentStep = 0;
+                    this.key = null;
+                    this.puzzle1Selected = null;
+                    this.puzzle2Selected = null;
+                    
+                    if (!this.validateElements()) {
+                        console.error("页面元素加载不完整，请刷新页面重试");
+                        return;
+                    }
+                    
+                    this.setupEventListeners();
+                    this.startAdventure();
+                }
+                
+                validateElements() {
+                    const requiredElements = [
+                        this.steps, this.progressBar, this.inputArea, 
+                        this.speedInput, this.speedBtn, this.treasureBox, 
+                        this.treasureMessage, this.restartBtn, this.puzzle1,
+                        this.puzzle2, this.decodeBtn, this.verifyBtn
+                    ];
+                    
+                    for (let element of requiredElements) {
+                        if (!element) {
+                            console.error("缺少必要的DOM元素:", element);
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                }
+                
+                setupEventListeners() {
+                    this.speedBtn.addEventListener('click', () => {
+                        this.handleSpeedInput();
+                    });
+                    
+                    this.restartBtn.addEventListener('click', () => {
+                        this.restartAdventure();
+                    });
+                    
+                    // 谜题1选项点击事件
+                    const puzzle1Options = this.puzzle1.querySelectorAll('.puzzle-option');
+                    puzzle1Options.forEach(option => {
+                        option.addEventListener('click', () => {
+                            puzzle1Options.forEach(opt => opt.classList.remove('selected'));
+                            option.classList.add('selected');
+                            this.puzzle1Selected = option.getAttribute('data-value');
+                        });
+                    });
+                    
+                    this.decodeBtn.addEventListener('click', () => {
+                        this.handleDecodePuzzle();
+                    });
+                    
+                    // 谜题2选项点击事件
+                    const puzzle2Options = this.puzzle2.querySelectorAll('.puzzle-option');
+                    puzzle2Options.forEach(option => {
+                        option.addEventListener('click', () => {
+                            puzzle2Options.forEach(opt => opt.classList.remove('selected'));
+                            option.classList.add('selected');
+                            this.puzzle2Selected = option.getAttribute('data-value');
+                        });
+                    });
+                    
+                    this.verifyBtn.addEventListener('click', () => {
+                        this.handleVerifyPuzzle();
+                    });
+                }
+                
+                async startAdventure() {
+                    try {
+                        await this.step1();
+                        await this.step2();
+                        await this.step3();
+                        await this.step4();
+                        await this.step5();
+                    } catch (error) {
+                        this.showError(error);
+                    }
+                }
+                
+                updateProgress() {
+                    const progress = (this.currentStep / this.steps.length) * 100;
+                    this.progressBar.style.width = `${progress}%`;
+                }
+                
+                activateStep(stepIndex) {
+                    this.steps.forEach(step => {
+                        step.classList.remove('active', 'completed', 'failed');
+                    });
+                    
+                    if (stepIndex < this.steps.length) {
+                        this.steps[stepIndex].classList.add('active');
+                        this.currentStep = stepIndex;
+                        this.updateProgress();
+                    }
+                }
+                
+                completeStep(stepIndex, message) {
+                    if (stepIndex < this.steps.length) {
+                        const stepContent = this.steps[stepIndex].querySelector('.step-content');
+                        const statusElement = stepContent.querySelector('.status');
+                        stepContent.innerHTML = `<div class="step-message">${message}</div>`;
+                        if (statusElement) {
+                            stepContent.appendChild(statusElement);
+                        }
+                        
+                        this.steps[stepIndex].classList.remove('active');
+                        this.steps[stepIndex].classList.add('completed');
+                        
+                        const status = this.steps[stepIndex].querySelector('.status');
+                        if (status) {
+                            status.textContent = '成功';
+                            status.classList.remove('pending');
+                            status.classList.add('success');
+                        }
+                    }
+                }
+                
+                failStep(stepIndex, message) {
+                    if (stepIndex < this.steps.length) {
+                        const stepContent = this.steps[stepIndex].querySelector('.step-content');
+                        const statusElement = stepContent.querySelector('.status');
+                        stepContent.innerHTML = `<div class="step-message">${message}</div>`;
+                        if (statusElement) {
+                            stepContent.appendChild(statusElement);
+                        }
+                        
+                        this.steps[stepIndex].classList.remove('active');
+                        this.steps[stepIndex].classList.add('failed');
+                        
+                        const status = this.steps[stepIndex].querySelector('.status');
+                        if (status) {
+                            status.textContent = '失败';
+                            status.classList.remove('pending');
+                            status.classList.add('failed');
+                        }
+                    }
+                }
+                
+                showError(error) {
+                    console.error("任务失败:", error);
+                    alert(`任务失败: ${error}`);
+                    this.restartBtn.style.display = 'block';
+                }
+                
+                delay(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                }
+                
+                async step1() {
+                    this.activateStep(0);
+                    await this.delay(1000);
+                    
+                    const clue = "在古老的图书馆里找到了第一个线索: '当太阳与月亮相遇，星星将指引你前进的方向'";
+                    this.completeStep(0, clue);
+                    await this.delay(500);
+                }
+                
+                async step2() {
+                    this.activateStep(1);
+                    await this.delay(1000);
+                    
+                    // 显示谜题
+                    this.puzzle1.style.display = 'block';
+                    
+                    // 等待用户解决谜题
+                    return new Promise((resolve, reject) => {
+                        this.handleDecodePuzzle = () => {
+                            if (!this.puzzle1Selected) {
+                                alert("请选择一个符号组合！");
+                                return;
+                            }
+                            
+                            this.puzzle1.style.display = 'none';
+                            
+                            if (this.puzzle1Selected === 'correct') {
+                                const location = "解码成功! 古老文字显示: '宝藏在一座古老的神庙中，钥匙藏于守护者之手'";
+                                this.completeStep(1, location);
+                                resolve();
+                            } else {
+                                this.failStep(1, "解码失败! 符号组合错误，无法理解古老文字的含义。");
+                                reject("解码失败，无法继续寻宝！");
+                            }
+                        };
+                    });
+                }
+                
+                async step3() {
+                    this.activateStep(2);
+                    await this.delay(1000);
+                    
+                    // 模拟搜索神庙（40%概率失败，30%概率遇到守卫，30%概率成功）
+                    const random = Math.random();
+                    if (random < 0.4) {
+                        // 失败情况 - 迷路
+                        this.failStep(2, "糟糕!在丛林中迷路了，无法找到神庙的位置！");
+                        await this.delay(1000);
+                        throw new Error("寻宝失败，在丛林中迷失了方向！");
+                    } else if (random < 0.7) {
+                        // 遇到守卫情况
+                        this.failStep(2, "糟糕!遇到了神庙守卫!在最下方输入您的跑酷速度以逃脱！");
+                        await this.delay(1000);
+                        
+                        // 显示输入区域，等待用户输入速度
+                        this.inputArea.style.display = 'block';
+                        
+                        // 等待用户输入速度
+                        return new Promise((resolve, reject) => {
+                            this.handleSpeedInput = () => {
+                                const speed = parseFloat(this.speedInput.value);
+                                if (isNaN(speed)) {
+                                    alert("请输入有效的速度值！");
+                                    return;
+                                }
+                                
+                                this.inputArea.style.display = 'none';
+                                
+                                if (speed <= 100) {
+                                    this.failStep(2, "完蛋！被逮住了！速度太慢！");
+                                    reject("被守卫抓住，寻宝失败！");
+                                } else {
+                                    this.key = "白银钥匙";
+                                    this.completeStep(2, `跑酷成功！获得${this.key}`);
+                                    resolve();
+                                }
+                            };
+                        });
+                    } else {
+                        // 成功情况
+                        this.key = "青铜钥匙";
+                        this.completeStep(2, `搜索成功！找到${this.key}`);
+                        await this.delay(500);
+                    }
+                }
+                
+                async step4() {
+                    this.activateStep(3);
+                    await this.delay(1000);
+                    
+                    if (!this.key || !["青铜钥匙", "白银钥匙"].includes(this.key)) {
+                        this.failStep(3, "没有拿到钥匙，或钥匙无效！");
+                        throw new Error("钥匙无效！");
+                    }
+                    
+                    // 显示钥匙验证谜题
+                    this.puzzle2.style.display = 'block';
+                    
+                    // 等待用户选择正确的钥匙
+                    return new Promise((resolve, reject) => {
+                        this.handleVerifyPuzzle = () => {
+                            if (!this.puzzle2Selected) {
+                                alert("请选择一把钥匙！");
+                                return;
+                            }
+                            
+                            this.puzzle2.style.display = 'none';
+                            
+                            if (this.puzzle2Selected === 'correct') {
+                                const verifyResult = `钥匙验证成功！${this.key}与古老的金钥匙匹配！即将打开宝箱！`;
+                                this.completeStep(3, verifyResult);
+                                resolve();
+                            } else {
+                                this.failStep(3, "钥匙验证失败！这把钥匙无法打开宝箱！");
+                                reject("钥匙验证失败，无法打开宝箱！");
+                            }
+                        };
+                    });
+                }
+                
+                async step5() {
+                    this.activateStep(4);
+                    await this.delay(1000);
+                    
+                    const treasure = "恭喜!你找到了传说中的宝藏!里面装满了金币和宝石！";
+                    this.completeStep(4, treasure);
+                    
+                    // 显示宝箱
+                    this.treasureBox.classList.add('open');
+                    this.treasureMessage.textContent = treasure;
+                    
+                    // 更新进度条到100%
+                    this.updateProgress();
+                    this.progressBar.style.width = '100%';
+                    
+                    // 显示重新开始按钮
+                    this.restartBtn.style.display = 'block';
+                }
+                
+                restartAdventure() {
+                    // 重置所有状态
+                    this.steps.forEach(step => {
+                        step.classList.remove('active', 'completed', 'failed');
+                        const stepContent = step.querySelector('.step-content');
+                        const status = stepContent.querySelector('.status');
+                        if (status) {
+                            status.textContent = '等待中...';
+                            status.classList.remove('success', 'failed');
+                            status.classList.add('pending');
+                        }
+                        stepContent.innerHTML = '';
+                        if (status) {
+                            stepContent.appendChild(status);
+                        }
+                    });
+                    
+                    this.progressBar.style.width = '0%';
+                    this.treasureBox.classList.remove('open');
+                    this.restartBtn.style.display = 'none';
+                    this.inputArea.style.display = 'none';
+                    this.puzzle1.style.display = 'none';
+                    this.puzzle2.style.display = 'none';
+                    this.speedInput.value = '';
+                    this.puzzle1Selected = null;
+                    this.puzzle2Selected = null;
+                    this.key = null;
+                    
+                    // 重新开始冒险
+                    this.startAdventure();
+                }
+            }
+
+            // 启动寻宝冒险
+            new TreasureMapUI();
+        });
+    </script>
+</body>
+</html>
